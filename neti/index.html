@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Escovação contra os Micróbios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(180deg, #8fd3ff, #ffffff);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #03415d;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 480px;
+            padding: 12px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+        }
+
+        #message {
+            text-align: center;
+            font-size: 0.9rem;
+            margin: 6px 0;
+        }
+
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        #game-area {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4; /* ajuda no mobile */
+            background: #f3fbff;
+            border-radius: 18px;
+            border: 3px solid #5bb7ff;
+            overflow: hidden;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+            touch-action: none; /* não rolar a tela ao arrastar */
+        }
+
+        #teeth-row {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 14px;
+        }
+
+        .tooth {
+            width: 32px;
+            height: 32px;
+            border-radius: 0 0 14px 14px;
+            background: #ffffff;
+            border: 2px solid #f0f0f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        #brush {
+            position: absolute;
+            width: 90px;
+            height: 42px;
+            border-radius: 22px;
+            background: linear-gradient(90deg, #ff9a9e, #fecf73);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            pointer-events: none; /* para não bloquear o toque */
+        }
+
+        #brush::after {
+            content: "🪥";
+            font-size: 1.4rem;
+        }
+
+        .germ {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffe4ff, #8bffb2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            animation: bounce 1s infinite alternate;
+        }
+
+        .germ::before {
+            content: "🦠";
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(-3px); }
+            to   { transform: translateY(3px); }
+        }
+
+        .clean {
+            animation: pop 0.35s forwards;
+        }
+
+        @keyframes pop {
+            0%   { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+
+        #start-btn, #play-again {
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 999px;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #ff9966, #ff5e62);
+            color: #fff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+
+        #start-btn:active, #play-again:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        #tips {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.9);
+            border: 1px dashed #5bb7ff;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .final-screen {
+            position: absolute;
+            inset: 8px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.96);
+            border: 3px solid #ffc857;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .final-screen h2 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        .final-screen p {
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        .final-text {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        /* texto um pouco maior em telas maiores */
+        @media (min-width: 600px) {
+            header h1 {
+                font-size: 1.6rem;
+            }
+            #game-area {
+                max-height: 600px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <header>
+        <h1>Super Escovação contra os Micróbios</h1>
+        <p>Arraste a escova e limpe os dentes antes que o tempo acabe!</p>
+    </header>
+
+    <div id="message">Toque e arraste a escova com o dedo para cima dos micróbios.</div>
+
+    <div id="hud">
+        <span>Tempo: <span id="time">30</span>s</span>
+        <span>Pontos: <span id="score">0</span></span>
+    </div>
+
+    <div id="game-area">
+        <!-- escova -->
+        <div id="brush"></div>
+
+        <!-- fila de dentes -->
+        <div id="teeth-row">
+            <div class="tooth">🦷</div>
+            <div class="tooth">🦷</div>
+            <div class="tooth">🦷</div>
+            <div class="tooth">🦷</div>
+            <div class="tooth">🦷</div>
+            <div class="tooth">🦷</div>
+        </div>
+
+        <!-- tela final -->
+        <div id="final-screen" class="final-screen hidden">
+            <h2>Parabéns!</h2>
+            <p>Você fez <span id="final-score"></span> pontos e espantou muitos micróbios! 🦷✨</p>
+            <p class="final-text">
+                Lembre-se: na vida real, escove os dentes por 2 minutos, de manhã e à noite,
+                usando pouca pasta e escovando também a língua.
+            </p>
+            <button id="play-again">Jogar de novo</button>
+        </div>
+    </div>
+
+    <button id="start-btn">Começar</button>
+
+    <div id="tips">
+        Dica: escove de manhã e antes de dormir para deixar os dentes super fortes!
+    </div>
+</div>
+
+<script>
+    const gameArea = document.getElementById("game-area");
+    const brush = document.getElementById("brush");
+    const timeSpan = document.getElementById("time");
+    const scoreSpan = document.getElementById("score");
+    const message = document.getElementById("message");
+    const tips = document.getElementById("tips");
+    const startBtn = document.getElementById("start-btn");
+    const finalScreen = document.getElementById("final-screen");
+    const finalScoreSpan = document.getElementById("final-score");
+    const playAgainBtn = document.getElementById("play-again");
+
+    let score = 0;
+    let timeLeft = 30;
+    let timerInterval = null;
+    let germInterval = null;
+    let playing = false;
+    let tipIndex = 0;
+
+    const tipsList = [
+        "Dica: escove por pelo menos 2 minutos!",
+        "Dica: não esqueça dos dentes de trás.",
+        "Dica: use pouca pasta, do tamanho de um grão de ervilha.",
+        "Dica: escove também a língua para um hálito fresquinho.",
+        "Dica: depois da escovação, evite comer doces por um tempo.",
+        "Dica: visite o dentista regularmente."
+    ];
+
+    function setBrushPosition(x, y) {
+        const areaRect = gameArea.getBoundingClientRect();
+        const brushWidth = brush.offsetWidth;
+        const brushHeight = brush.offsetHeight;
+
+        let newLeft = x - areaRect.left - brushWidth / 2;
+        let newTop = y - areaRect.top - brushHeight / 2;
+
+        // limitar dentro da área do jogo
+        if (newLeft < 0) newLeft = 0;
+        if (newTop < 0) newTop = 0;
+        if (newLeft + brushWidth > areaRect.width) newLeft = areaRect.width - brushWidth;
+        if (newTop + brushHeight > areaRect.height) newTop = areaRect.height - brushHeight;
+
+        brush.style.left = newLeft + "px";
+        brush.style.top = newTop + "px";
+
+        checkCollisions();
+    }
+
+    function handlePointerMove(e) {
+        if (!playing) return;
+
+        if (e.touches && e.touches.length > 0) {
+            const touch = e.touches[0];
+            setBrushPosition(touch.clientX, touch.clientY);
+        } else if (e.clientX !== undefined) {
+            setBrushPosition(e.clientX, e.clientY);
+        }
+        e.preventDefault();
+    }
+
+    function spawnGerm() {
+        if (!playing) return;
+        const germ = document.createElement("div");
+        germ.classList.add("germ");
+
+        const areaRect = gameArea.getBoundingClientRect();
+        const size = 40;
+
+        const minX = 5;
+        const maxX = areaRect.width - size - 5;
+        const minY = 10;
+        const maxY = areaRect.height - 100; // evitar encostar muito nos dentes
+
+        const randomX = Math.random() * (maxX - minX) + minX;
+        const randomY = Math.random() * (maxY - minY) + minY;
+
+        germ.style.left = randomX + "px";
+        germ.style.top = randomY + "px";
+
+        gameArea.appendChild(germ);
+
+        // micróbio vai embora sozinho depois de um tempo
+        setTimeout(() => {
+            if (germ.parentNode && playing) {
+                germ.remove();
+            }
+        }, 4000);
+    }
+
+    function checkCollisions() {
+        const germs = document.querySelectorAll(".germ");
+        const brushRect = brush.getBoundingClientRect();
+
+        germs.forEach(germ => {
+            const rect = germ.getBoundingClientRect();
+            const overlapping =
+                rect.left < brushRect.right &&
+                rect.right > brushRect.left &&
+                rect.top < brushRect.bottom &&
+                rect.bottom > brushRect.top;
+
+            if (overlapping && !germ.classList.contains("clean")) {
+                cleanGerm(germ);
+            }
+        });
+    }
+
+    function cleanGerm(germ) {
+        score += 1;
+        scoreSpan.textContent = score;
+
+        // mostrar dica
+        tips.textContent = tipsList[tipIndex];
+        tipIndex = (tipIndex + 1) % tipsList.length;
+
+        germ.classList.add("clean");
+        setTimeout(() => {
+            if (germ.parentNode) {
+                germ.remove();
+            }
+        }, 300);
+    }
+
+    function startTimer() {
+        timeLeft = 30;
+        timeSpan.textContent = timeLeft;
+
+        timerInterval = setInterval(() => {
+            timeLeft -= 1;
+            timeSpan.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }, 1000);
+    }
+
+    function startSpawningGerms() {
+        germInterval = setInterval(() => {
+            spawnGerm();
+        }, 900);
+    }
+
+    function clearGerms() {
+        document.querySelectorAll(".germ").forEach(g => g.remove());
+    }
+
+    function startGame() {
+        playing = true;
+        score = 0;
+        scoreSpan.textContent = score;
+        tipIndex = 0;
+        tips.textContent = tipsList[0];
+        message.textContent = "Arraste a escova por cima dos micróbios para limpá-los!";
+
+        finalScreen.classList.add("hidden");
+
+        clearGerms();
+
+        if (timerInterval) clearInterval(timerInterval);
+        if (germInterval) clearInterval(germInterval);
+
+        startTimer();
+        startSpawningGerms();
+    }
+
+    function endGame() {
+        playing = false;
+        clearInterval(timerInterval);
+        clearInterval(germInterval);
+
+        message.textContent = "Acabou o tempo! Veja como você foi bem e tente de novo.";
+
+        finalScoreSpan.textContent = score;
+        finalScreen.classList.remove("hidden");
+        clearGerms();
+    }
+
+    // eventos de toque/mouse
+    gameArea.addEventListener("touchstart", handlePointerMove, { passive: false });
+    gameArea.addEventListener("touchmove", handlePointerMove, { passive: false });
+    gameArea.addEventListener("mousemove", handlePointerMove);
+
+    // botão começar
+    startBtn.addEventListener("click", () => {
+        startGame();
+    });
+
+    // botão jogar de novo
+    playAgainBtn.addEventListener("click", () => {
+        startGame();
+    });
+
+    // posição inicial da escova (centro embaixo)
+    window.addEventListener("load", () => {
+        const areaRect = gameArea.getBoundingClientRect();
+        const x = areaRect.left + areaRect.width / 2;
+        const y = areaRect.top + areaRect.height * 0.75;
+        setBrushPosition(x, y);
+    });
+
+    // ajustar escova ao redimensionar (caso mude orientação da tela)
+    window.addEventListener("resize", () => {
+        const areaRect = gameArea.getBoundingClientRect();
+        const x = areaRect.left + areaRect.width / 2;
+        const y = areaRect.top + areaRect.height * 0.75;
+        setBrushPosition(x, y);
+    });
+</script>
+</body>
+</html>
