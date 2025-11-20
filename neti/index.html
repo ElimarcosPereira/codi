@@ -178,6 +178,13 @@
             display: none;
         }
 
+        /* AQUI ESTAVA O BUG: 
+           quando .final-screen e .hidden estão juntos,
+           este seletor garante que ela fique escondida. */
+        .final-screen.hidden {
+            display: none;
+        }
+
         .final-screen {
             position: absolute;
             inset: 8px;
@@ -208,7 +215,6 @@
             opacity: 0.9;
         }
 
-        /* texto um pouco maior em telas maiores */
         @media (min-width: 600px) {
             header h1 {
                 font-size: 1.6rem;
@@ -303,7 +309,6 @@
         let newLeft = x - areaRect.left - brushWidth / 2;
         let newTop = y - areaRect.top - brushHeight / 2;
 
-        // limitar dentro da área do jogo
         if (newLeft < 0) newLeft = 0;
         if (newTop < 0) newTop = 0;
         if (newLeft + brushWidth > areaRect.width) newLeft = areaRect.width - brushWidth;
@@ -338,7 +343,7 @@
         const minX = 5;
         const maxX = areaRect.width - size - 5;
         const minY = 10;
-        const maxY = areaRect.height - 100; // evitar encostar muito nos dentes
+        const maxY = areaRect.height - 100;
 
         const randomX = Math.random() * (maxX - minX) + minX;
         const randomY = Math.random() * (maxY - minY) + minY;
@@ -348,7 +353,6 @@
 
         gameArea.appendChild(germ);
 
-        // micróbio vai embora sozinho depois de um tempo
         setTimeout(() => {
             if (germ.parentNode && playing) {
                 germ.remove();
@@ -378,7 +382,6 @@
         score += 1;
         scoreSpan.textContent = score;
 
-        // mostrar dica
         tips.textContent = tipsList[tipIndex];
         tipIndex = (tipIndex + 1) % tipsList.length;
 
@@ -445,22 +448,18 @@
         clearGerms();
     }
 
-    // eventos de toque/mouse
     gameArea.addEventListener("touchstart", handlePointerMove, { passive: false });
     gameArea.addEventListener("touchmove", handlePointerMove, { passive: false });
     gameArea.addEventListener("mousemove", handlePointerMove);
 
-    // botão começar
     startBtn.addEventListener("click", () => {
         startGame();
     });
 
-    // botão jogar de novo
     playAgainBtn.addEventListener("click", () => {
         startGame();
     });
 
-    // posição inicial da escova (centro embaixo)
     window.addEventListener("load", () => {
         const areaRect = gameArea.getBoundingClientRect();
         const x = areaRect.left + areaRect.width / 2;
@@ -468,7 +467,6 @@
         setBrushPosition(x, y);
     });
 
-    // ajustar escova ao redimensionar (caso mude orientação da tela)
     window.addEventListener("resize", () => {
         const areaRect = gameArea.getBoundingClientRect();
         const x = areaRect.left + areaRect.width / 2;
